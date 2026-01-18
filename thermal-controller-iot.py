@@ -191,9 +191,6 @@ class SensorMonitor:
             with open(config_path, 'r') as f:
                 config = yaml.safe_load(f)
             
-            # Создаем необходимые директории
-            Path(self.config.get('database', {}).get('path', './sensor_data.db')).parent.mkdir(exist_ok=True)
-            
             return config
         except Exception as e:
             logger.error(f"Ошибка загрузки конфигурации: {e}")
@@ -207,18 +204,20 @@ class SensorMonitor:
                 'name': 'raspberry-pi-climate',
                 'location': 'кабинет'
             },
-            'bme280': {
+            'sensor': {  # Изменено с bme280 на sensor
                 'i2c_bus': 1,
                 'i2c_address': 0x76,
-                'read_interval': 10
+                'sea_level_pressure': 1013.25,
+                'read_interval': 10,
+                'temperature_offset': 0.0,
+                'humidity_offset': 0.0,
+                'pressure_offset': 0.0
             },
-            'web': {
-                'host': '0.0.0.0',
-                'port': 8080,
-                'debug': False
-            },
-            'database': {
-                'path': './sensor_data.db'
+            'logging': {
+                'level': 'INFO',
+                'file': './sensor_monitor.log',
+                'max_size_mb': 10,
+                'backup_count': 5
             }
         }
     
