@@ -19,6 +19,10 @@ sensor:
   humidity_offset: 0.0
   pressure_offset: 0.0
 
+web:
+  host: "0.0.0.0"
+  port: 8080
+
 # Логирование
 logging:
   level: "INFO"

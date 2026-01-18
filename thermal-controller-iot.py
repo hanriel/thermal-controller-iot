@@ -11,6 +11,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any
 import yaml
+import sqlite3
+from flask import Flask, render_template_string, jsonify
 
 # CircuitPython для BME280
 try:
@@ -171,6 +173,56 @@ class ThermalSensor:
         except:
             return False
 
+class SimpleDatabase:
+    """Простая база данных SQLite"""
+    def __init__(self, db_path='sensor_data.db'):
+        self.db_path = db_path
+        self.init_db()
+    
+    def init_db(self):
+        """Инициализация таблицы"""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS measurements
+                     (id INTEGER PRIMARY KEY,
+                      timestamp DATETIME,
+                      temperature REAL,
+                      humidity REAL,
+                      pressure REAL)''')
+        conn.commit()
+        conn.close()
+    
+    def save_reading(self, temp, humidity, pressure):
+        """Сохранить показание"""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("INSERT INTO measurements (timestamp, temperature, humidity, pressure) VALUES (?, ?, ?, ?)",
+                  (datetime.now().isoformat(), temp, humidity, pressure))
+        conn.commit()
+        conn.close()
+    
+    def get_recent(self, limit=100):
+        """Получить последние записи"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("SELECT * FROM measurements ORDER BY timestamp DESC LIMIT ?", (limit,))
+        rows = c.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+    
+    def get_last_hour(self):
+        """Получить данные за последний час"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        hour_ago = datetime.now().timestamp() - 3600
+        c.execute("SELECT * FROM measurements WHERE timestamp > ? ORDER BY timestamp ASC",
+                  (datetime.fromtimestamp(hour_ago).isoformat(),))
+        rows = c.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+
 class SensorMonitor:
     """Основной класс системы мониторинга"""
     
@@ -180,8 +232,8 @@ class SensorMonitor:
         
         # Инициализация компонентов
         self.sensor = ThermalSensor(self.config)
-        #self.db = Database()
-        #self.web = WebInterface()
+        self.db = SimpleDatabase()
+        self.web_app = self.create_web_app()
         
         logger.info("Система мониторинга инициализирована")
     
@@ -221,6 +273,63 @@ class SensorMonitor:
             }
         }
     
+    def create_web_app(self):
+        """Создание Flask приложения"""
+        app = Flask(__name__)
+        
+        @app.route('/')
+        def index():
+            """Главная страница"""
+            return render_template_string(
+                'index.html',
+                device_name=self.config['device']['name'],
+                location=self.config['device']['location'],
+                status_text='Датчик подключен' if self.sensor.is_connected() else 'Датчик отключен',
+                status_class='online' if self.sensor.is_connected() else 'offline'
+            )
+        
+        @app.route('/api/current')
+        def api_current():
+            """Текущие данные"""
+            reading = self.sensor.read()
+            if reading:
+                self.db.save_reading(reading.temperature, reading.humidity, reading.pressure)
+            
+            return jsonify({
+                'success': True,
+                'sensor_connected': self.sensor.is_connected(),
+                'stats': reading
+            })
+        
+        @app.route('/api/history')
+        def api_history():
+            """История данных"""
+            from flask import request
+            hours = int(request.args.get('hours', 1)) if 'request' in locals() else 1
+            
+            
+            if hours == 1:
+                data = self.db.get_last_hour()
+            else:
+                limit = hours * 60 // self.config['sensor']['read_interval']
+                data = self.db.get_recent(limit)
+            
+            return jsonify({
+                'success': True,
+                'data': data
+            })
+        
+        @app.route('/api/health')
+        def api_health():
+            """Статус системы"""
+            return jsonify({
+                'status': 'ok',
+                'sensor_connected': self.sensor.is_connected(),
+                'timestamp': datetime.now().isoformat()
+            })
+        
+        return app
+
     def _data_collection_thread(self):
         """Поток сбора данных с датчика"""
         logger.info("Запуск потока сбора данных")

@@ -6,5 +6,8 @@ adafruit-circuitpython-bme280==2.6.30
 pyyaml==6.0.3
 python-dotenv==1.0.0
 
+# Веб-панель
+Flask==2.3.3
+
 # Логирование
 structlog==23.1.0

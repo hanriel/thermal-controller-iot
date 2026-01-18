@@ -2,3 +2,4 @@
 *.log
 port.txt
 .vscode/
+*.db
