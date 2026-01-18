@@ -1,0 +1,40 @@
+# Система мониторинга температуры и влажности
+version: 1.0
+
+# Настройки устройства
+device:
+  name: "home-climate-monitor"
+  location: "living_room"
+  description: "Основной монитор температуры"
+
+# Настройки датчиков
+sensor:
+  i2c_bus: 1
+  i2c_address: 0x76
+  sea_level_pressure: 1013.25  # гПа для расчета высоты
+  read_interval: 30    # секунды между измерениями
+  
+  # Калибровка (опционально)
+  temperature_offset: 0.0
+  humidity_offset: 0.0
+  pressure_offset: 0.0
+
+# Логирование
+logging:
+  level: "INFO"
+  file: "/var/log/temperature-monitor/app.log"
+  max_size_mb: 10
+  backup_count: 5
+
+# Внешние интеграции
+integrations:
+  mqtt:
+    enabled: true
+    broker: "localhost"
+    port: 1883
+    topic: "home/climate/{device_name}"
+    
+  home_assistant:
+    enabled: false
+    url: "http://homeassistant.local:8123"
+    token: ""

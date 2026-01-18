@@ -20,7 +20,7 @@
 - Фронтенд: Bootstrap 5 + Chart.js + jQuery
 - База данных: SQLite с SQLAlchemy ORM
 - Аналитика: pandas + scipy + scikit-learn
-- Драйверы: RPi.GPIO, adafruit-circuitpython-dht
+- Драйверы: Adafruit_CircuitPython_BME280
 - Конфигурация: YAML + dotenv
 - Логирование: встроенный logging с ротацией
 
@@ -41,10 +41,10 @@ thermal-contoller-iot/
 ```
 
 ## Участие в разработке
-Форкните репозиторий
-Создайте ветку для новой функции
-Запустите тесты: pytest
-Отправьте Pull Request
+1. Форкните репозиторий
+2. Создайте ветку для новой функции
+3. Запустите тесты: pytest
+4. Отправьте Pull Request
 
 ## Лицензия
 
