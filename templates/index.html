@@ -48,6 +48,12 @@
                 <div class="sensor-value pressure" id="pressure">--.-</div>
                 <div>гПа</div>
             </div>
+            
+            <div class="sensor-card">
+                <div class="sensor-label">Точка россы</div>
+                <div class="sensor-value temp" id="dewPoint">--.-</div>
+                <div>°C</div>
+            </div>
         </div>
         
         <div class="last-update">
@@ -71,6 +77,7 @@
                     document.getElementById('temp').textContent = data.temperature.toFixed(1);
                     document.getElementById('humidity').textContent = data.humidity.toFixed(1);
                     document.getElementById('pressure').textContent = data.pressure.toFixed(1);
+                    document.getElementById('dewPoint').textContent = (data.temperature-0.36*(100.0-data.humidity)).toFixed(1);
                     document.getElementById('lastUpdate').textContent = 
                         new Date(data.timestamp).toLocaleTimeString();
                     
